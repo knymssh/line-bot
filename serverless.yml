@@ -26,9 +26,9 @@ provider:
   stackTags:
     Name: LineBot
   environment:
-    LineChannelID: 999999999
-    LineChannelSecret: hogehoge
-    LineTrustedUserWithACL: hogehoge
+    LineChannelID: ${self:custom.credentials.LineChannelID}
+    LineChannelSecret: ${self:custom.credentials.LineChannelSecret}
+    LineTrustedUserWithACL: ${self:custom.credentials.LineTrustedUserWithACL}
 
 # you can add statements to the Lambda function's IAM Role here
 #  iamRoleStatements:
@@ -54,6 +54,7 @@ custom:
   defaultStage: dev
   defaultRegion: ap-northeast-1
   bucketName: com.knymssh.linebot
+  credentials: ${file(./credentials/${self:provider.stage}.yml)}
 
 # you can add packaging information here
 package:

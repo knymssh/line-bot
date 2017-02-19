@@ -3,3 +3,5 @@
 !/vendor/__init__.py
 /.idea/
 /.serverless/
+/credentials/*
+!/credentials/sample.yml
