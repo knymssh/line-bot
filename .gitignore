@@ -1,0 +1,5 @@
+/venv/
+/vendor/*
+!/vendor/__init__.py
+/.idea/
+/.serverless/
