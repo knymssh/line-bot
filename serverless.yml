@@ -1,0 +1,317 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: LineBot
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  runtime: python2.7
+  stage: ${opt:stage, self:custom.defaultStage}
+  region: ${opt:region, self:custom.defaultRegion}
+  role: myDefaultRole
+  stackTags:
+    Name: LineBot
+  environment:
+    LineChannelID: 999999999
+    LineChannelSecret: hogehoge
+    LineTrustedUserWithACL: hogehoge
+
+# you can add statements to the Lambda function's IAM Role here
+#  iamRoleStatements:
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:ListBucket"
+#      Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket" } ] ]  }
+#    - Effect: "Allow"
+#      Action:
+#        - "s3:PutObject"
+#      Resource:
+#        Fn::Join:
+#          - ""
+#          - - "arn:aws:s3:::"
+#            - "Ref" : "ServerlessDeploymentBucket"
+
+#  apiKeys:
+#    - myFirstKey
+#    - ${opt:stage}-myFirstKey
+#    - ${env:MY_API_KEY} # you can hide it in a serverless variable
+
+custom:
+  defaultStage: dev
+  defaultRegion: ap-northeast-1
+  bucketName: com.knymssh.linebot
+
+# you can add packaging information here
+package:
+#  include:
+#    - include-me.py
+#    - include-me-dir/**
+  exclude:
+#    - exclude-me.py
+    - venv/**
+
+functions:
+  line-bot:
+    name: LineBot-${self:provider.stage}
+    description: Line Bot
+#    handler: handler.lambda_handler
+    handler: handler.hello
+    memorySize: 128
+    timeout: 60
+    events:
+      - http:
+          path: users
+          method: get
+#          private: true
+
+#          cors:
+#            origins:
+#              - '*'
+#            headers:
+#              - Content-Type
+#              - X-Amz-Date
+#              - Authorization
+#              - X-Api-Key
+#              - X-Amz-Security-Token
+#            allowCredentials: false
+
+#          integration: lambda
+#          request:
+#            parameters:
+#              querystrings:
+#                url: true
+#              headers:
+#                foo: false
+#                bar: true
+#              paths:
+#                bar: false
+#            template:
+#              text/xhtml: '{ "stage" : "$context.stage" }'
+#              application/json: '{ "httpMethod" : "$context.httpMethod" }'
+#              application/json: '{ "foo" : "$input.params(''bar'')" }'
+#              passThrough: NEVER
+#          response:
+#            headers:
+#              Content-Type: integration.response.header.Content-Type
+#              Cache-Control: "'max-age=120'"
+#          response:
+#            headers:
+#              Content-Type: "'text/html'"
+#            template: $input.path('$')
+#            statusCodes:
+#                201:
+#                    pattern: '' # Default response method
+#                409:
+#                    pattern: '.*"statusCode":409,.*' # JSON response
+#                    template: $input.path("$.errorMessage") # JSON return object
+#                    headers:
+#                      Content-Type: "'application/json+hal'"
+#                409:
+#                    pattern: '.*"statusCode":409,.*' # JSON response
+#                    template:
+#                      application/json: $input.path("$.errorMessage") # JSON return object
+#                      application/xml: $input.path("$.body.errorMessage") # XML return object
+#                    headers:
+#                      Content-Type: "'application/json+hal'"
+
+      - http:
+          path: users/{id}
+          method: get
+
+#      - http:
+#          path: users/create
+#          method: post
+
+#          authorizer:
+#            name: authorizerFunc
+#            resultTtlInSeconds: 0
+#            identitySource: method.request.header.Authorization
+#            identityValidationExpression: someRegex
+#          authorizer: xxx:xxx:Lambda-Name
+#          authorizer:
+#            arn: arn:aws:cognito-idp:us-east-1:xxx:userpool/us-east-1_ZZZ
+#            claims:
+#              - email
+#              - nickname
+#  authorizerFunc:
+#    handler: handlers.authorizerFunc
+
+#    The following are a few example events you can configure
+#    NOTE: Please make sure to change your handler code to work with those events
+#    Check the event documentation for details
+#    events:
+#      - http:
+#          path: users/create
+#          method: get
+#      - s3: ${env:BUCKET}
+#      - schedule: rate(10 minutes)
+#      - sns: greeter-topic
+#      - stream: arn:aws:dynamodb:region:XXXXXX:table/foo/stream/1970-01-01T00:00:00.000
+#      - alexaSkill
+#      - iot:
+#          sql: "SELECT * FROM 'some_topic'"
+#      - cloudwatchEvent:
+#          event:
+#            source:
+#              - "aws.ec2"
+#            detail-type:
+#              - "EC2 Instance State-change Notification"
+#            detail:
+#              state:
+#                - pending
+
+# you can add CloudFormation resource templates here
+resources:
+  Resources:
+    myBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.bucketName}
+    SampleBucketPolicy:
+      Type: "AWS::S3::BucketPolicy"
+      Properties:
+        Bucket:
+          Ref: "myBucket"
+        PolicyDocument:
+          Statement:
+            -
+              Action:
+                - "s3:GetObject"
+                - "s3:PutObject"
+                - "s3:ListBucket"
+              Effect: "Allow"
+              Resource:
+                - Fn::Join:
+                  - ""
+                  -
+                    - "arn:aws:s3:::"
+                    - Ref: "myBucket"
+                - Fn::Join:
+                  - ""
+                  -
+                    - "arn:aws:s3:::"
+                    - Ref: "myBucket"
+                    - "/*"
+              Principal:
+                AWS:
+                  Fn::GetAtt:
+                    - "myDefaultRole"
+                    - "Arn"
+#              Condition:
+#                StringLike:
+#                  aws:Referer:
+#                    - "http://www.example.com/*"
+#                    - "http://example.com/*"
+    myDefaultRole:
+      Type: AWS::IAM::Role
+      Properties:
+#        Path: /my/default/path
+        RoleName: MyDefaultRole
+#        ManagedPolicyArns:
+#          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: myPolicyName
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow # note that these rights are given in the default policy and are required if you want logs out of your lambda(s)
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource:
+                    Fn::Join:
+                      - ':'
+                      -
+                        - 'arn:aws:logs'
+                        - Ref: 'AWS::Region'
+                        - Ref: 'AWS::AccountId'
+                        - 'log-group:/aws/lambda/*:*:*'
+                - Effect: "Allow"
+                  Action:
+                    - "s3:PutObject"
+                  Resource:
+                    Fn::Join:
+                      - ""
+                      - - "arn:aws:s3:::"
+                        - "Ref" : "ServerlessDeploymentBucket"
+                - Effect: "Allow"
+                  Action:
+                    - "s3:PutObject"
+                    - "s3:GetObject"
+                  Resource:
+                    Fn::Join:
+                      - ""
+                      - - "arn:aws:s3:::"
+                        - "Ref" : "myBucket"
+#    myTable:
+#      Type: "AWS::DynamoDB::Table"
+#      Properties:
+#        AttributeDefinitions:
+#          - AttributeName: type
+#            AttributeType: S
+#          - AttributeName: craftsman
+#            AttributeType: S
+#        KeySchema:
+#          - AttributeName: type
+#            KeyType: HASH
+#          - AttributeName: craftsman
+#            KeyType: RANGE
+#        ProvisionedThroughput:
+#          ReadCapacityUnits: 1
+#         WriteCapacityUnits: 1
+#        TableName: my_table
+
+#    ProxyResource:
+#      Type: AWS::ApiGateway::Resource
+#      Properties:
+#        ParentId:
+#          Fn::GetAtt:
+#            - ApiGatewayRestApi # our default Rest API logical ID
+#            - RootResourceId
+#        PathPart: serverless # the endpoint in your API that is set as proxy
+#        RestApiId:
+#          Ref: ApiGatewayRestApi
+#    ProxyMethod:
+#      Type: AWS::ApiGateway::Method
+#      Properties:
+#        ResourceId:
+#          Ref: ProxyResource
+#        RestApiId:
+#          Ref: ApiGatewayRestApi
+#        HttpMethod: GET # the method of your proxy. Is it GET or POST or ... ?
+#        MethodResponses:
+#          - StatusCode: 200
+#        Integration:
+#          IntegrationHttpMethod: POST
+#          Type: HTTP
+#          Uri: http://serverless.com # the URL you want to set a proxy to
+#          IntegrationResponses:
+#            - StatusCode: 200
+
+#  Outputs:
+#     NewOutput:
+#       Description: "Description for the output"
+#       Value: "Some output value"
